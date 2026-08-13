@@ -1,0 +1,263 @@
+# Intelligent Telegram Calendar Assistant — n8n Workflow
+
+## Workflow Overview
+
+This **n8n workflow** functions as an intelligent calendar assistant on **Telegram**, enabling users to manage Google Calendar events through natural-language text or voice messages.
+
+The system uses an **AI Agent powered by OpenAI** to understand user intent and dynamically perform calendar operations such as creating, retrieving, updating, postponing, and deleting events while checking for scheduling conflicts.
+
+---
+
+## Step-by-Step Breakdown
+
+### 1. Trigger & Input Handling — Telegram & Switch
+
+* **Telegram Trigger:** Listens for incoming messages and voice notes sent by users.
+* **Switch:** Determines whether the incoming input is:
+
+  * Text
+  * Voice
+* Routes the input to the appropriate processing path.
+
+#### Voice Processing
+
+When a voice note is received:
+
+1. **Telegram1** downloads the audio file from Telegram.
+2. The audio is sent to **OpenAI**.
+3. OpenAI's audio transcription model converts the voice message into text.
+4. The transcribed text is passed to the AI Agent for further processing.
+
+```text
+Telegram Message
+       │
+       ▼
+     Switch
+    /      \
+ Text      Voice
+  │          │
+  │       Download Audio
+  │          │
+  │       OpenAI STT
+  │          │
+  └────┬─────┘
+       ▼
+    AI Agent
+```
+
+---
+
+### 2. AI Agent Core & Memory
+
+The **AI Agent** acts as the central intelligence and decision-making layer of the workflow.
+
+#### AI Agent
+
+The agent is configured with a specialized system prompt that enables it to:
+
+* Understand natural-language calendar requests.
+* Identify the user's intent.
+* Extract event information such as:
+
+  * Event title
+  * Date
+  * Time
+  * Duration
+  * Description
+  * Attendees
+  * Recurrence
+* Determine whether the user wants to:
+
+  * Create an event
+  * Find an event
+  * Update an event
+  * Postpone an event
+  * Delete an event
+* Select and execute the appropriate Google Calendar tool.
+* Check for scheduling conflicts before confirming changes.
+
+#### OpenAI Chat Model
+
+The OpenAI Chat Model provides the reasoning and natural-language understanding capabilities used by the AI Agent.
+
+#### Simple Memory
+
+The workflow uses **Simple Memory** to maintain conversational context between messages.
+
+Each user's conversation is associated with their **Telegram Chat ID**, allowing the assistant to understand follow-up requests such as:
+
+> "Move it to tomorrow."
+
+without requiring the user to repeat the complete event details.
+
+---
+
+## 3. Google Calendar Tools & Actions
+
+The AI Agent has access to a collection of Google Calendar tools and dynamically selects the appropriate tool based on the user's request.
+
+### Event Management
+
+#### Add Event
+
+Creates a new Google Calendar event using the information extracted from the user's message.
+
+#### Fetch Events
+
+Searches and retrieves existing calendar events, allowing the assistant to identify relevant events and check availability.
+
+#### Attendees
+
+Manages event participants by handling attendee email addresses and guest lists.
+
+---
+
+### Recurring Events
+
+The workflow supports recurring calendar events through dedicated recurrence tools:
+
+* **Daily**
+* **Weekly**
+* **Monthly**
+* **Yearly**
+
+These tools allow the assistant to create and manage events that repeat according to a specified schedule.
+
+---
+
+### Event Updates & Postponement
+
+Dedicated update tools allow the AI Agent to modify existing events:
+
+* `update daily`
+* `update weekly`
+* `update monthly`
+* `update yearly`
+
+These tools can be used to:
+
+* Change event dates.
+* Change event times.
+* Postpone events.
+* Modify event descriptions.
+* Update recurring schedules.
+
+---
+
+### Delete Event
+
+The **Delete Event** tool allows the assistant to identify and remove specific calendar events when requested by the user.
+
+---
+
+## 4. Response Delivery
+
+After completing the requested calendar operation, the workflow sends the final response back to the user through **Telegram**.
+
+The response:
+
+* Confirms the requested action.
+* Reports the relevant event details.
+* Identifies scheduling conflicts when applicable.
+* Responds in the **same language used by the user**.
+
+For example:
+
+```text
+User:
+"ذكّرني باجتماع الفريق بكرا الساعة 10 الصبح"
+
+        ↓
+
+AI Agent
+        ↓
+Identify intent → Create Event
+        ↓
+Check Calendar
+        ↓
+No Conflict
+        ↓
+Create Google Calendar Event
+        ↓
+Telegram Response
+
+"تمت إضافة اجتماع الفريق غداً الساعة 10:00 صباحاً."
+```
+
+---
+
+## Workflow Architecture
+
+```text
+                    Telegram
+                       │
+                       ▼
+               Telegram Trigger
+                       │
+                       ▼
+                    Switch
+                  /        \
+               Text        Voice
+                │            │
+                │       Download Audio
+                │            │
+                │       OpenAI Transcription
+                │            │
+                └─────┬──────┘
+                      ▼
+                 AI Agent
+                      │
+          ┌───────────┴───────────┐
+          │                       │
+     OpenAI Chat             Simple Memory
+       Model               (Telegram Chat ID)
+          │
+          ▼
+   Google Calendar Tools
+          │
+    ┌─────┼─────────────┐
+    │     │             │
+    ▼     ▼             ▼
+  Add   Fetch       Attendees
+ Event  Events
+    │
+    ├── Daily Recurrence
+    ├── Weekly Recurrence
+    ├── Monthly Recurrence
+    ├── Yearly Recurrence
+    │
+    ├── Update Daily
+    ├── Update Weekly
+    ├── Update Monthly
+    ├── Update Yearly
+    │
+    └── Delete Event
+          │
+          ▼
+   Conflict Checking
+          │
+          ▼
+       Telegram
+      Response
+```
+
+## Key Capabilities
+
+| Capability                 | Description                                                |
+| -------------------------- | ---------------------------------------------------------- |
+| **Natural Language**       | Understands calendar requests expressed conversationally   |
+| **Voice Support**          | Converts Telegram voice notes into text automatically      |
+| **AI Intent Detection**    | Determines the required calendar operation                 |
+| **Calendar Management**    | Creates, retrieves, updates, postpones, and deletes events |
+| **Recurring Events**       | Supports daily, weekly, monthly, and yearly schedules      |
+| **Attendee Management**    | Handles event participants and guest emails                |
+| **Conflict Detection**     | Checks existing events before scheduling changes           |
+| **Conversation Memory**    | Maintains context across user interactions                 |
+| **Multilingual Responses** | Responds according to the user's original language         |
+| **Telegram Integration**   | Provides the complete user interface through Telegram      |
+
+## Overall System
+
+The workflow transforms **Telegram into an AI-powered conversational calendar interface**, allowing users to manage their schedules without interacting directly with the Google Calendar interface.
+
+The combination of **Telegram + OpenAI + AI Agent + Memory + Google Calendar** enables a natural, conversational scheduling experience that supports both **text and voice-based interactions**.
