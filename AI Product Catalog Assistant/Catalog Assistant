@@ -1,0 +1,260 @@
+# AI Product Catalog Assistant — n8n Workflow
+
+## Workflow Overview
+
+This **n8n workflow** functions as an intelligent **Telegram-based product assistant** backed by a hybrid database architecture combining a **Supabase relational database** with a **vector store**.
+
+The system uses a custom keyword-based routing mechanism and an **OpenAI-powered AI Agent** to answer user queries about products, pricing, specifications, availability, and technical catalogs.
+
+The architecture is designed to provide **database-grounded answers** and reduce hallucinations by requiring the AI Agent to rely on retrieved product data rather than generating unsupported information.
+
+---
+
+## Step-by-Step Breakdown
+
+### 1. Trigger & Message Routing — Telegram Trigger & Code Node
+
+The workflow starts when a user sends a message through Telegram.
+
+#### Telegram Trigger
+
+* Listens for incoming Telegram messages.
+* Captures the user's text query.
+* Passes the message into the routing layer for intent analysis.
+
+#### Code Node
+
+The **Code Node** analyzes the incoming user message against predefined keyword lists and determines which database source should be queried.
+
+The query can be routed to:
+
+* **SQL:** For structured product information such as price, brand, and availability.
+* **Vector:** For technical specifications, product descriptions, and catalog information.
+* **Both:** When the user's request requires information from both structured and unstructured sources.
+
+```text id="r3m7qk"
+                Telegram
+                   │
+                   ▼
+           Telegram Trigger
+                   │
+                   ▼
+               Code Node
+                   │
+          Keyword / Intent Routing
+                   │
+        ┌──────────┼──────────┐
+        ▼          ▼          ▼
+       SQL       Vector      Both
+```
+
+---
+
+## 2. AI Agent Core & Memory
+
+The **AI Agent** acts as the main conversational and decision-making engine of the system.
+
+### AI Agent
+
+The agent is instructed to provide answers based only on **retrieved database-grounded context**.
+
+Its responsibilities include:
+
+* Understanding the user's natural-language question.
+* Using the appropriate database tool.
+* Combining information from multiple sources when necessary.
+* Answering questions about:
+
+  * Products
+  * Prices
+  * Brands
+  * Availability
+  * Technical specifications
+  * Product capabilities
+  * Catalog information
+* Avoiding unsupported assumptions and fabricated information.
+* Presenting retrieved information clearly to the user.
+
+### OpenAI Chat Model — GPT-4o-mini
+
+The **OpenAI Chat Model (GPT-4o-mini)** provides:
+
+* Natural-language understanding.
+* Query interpretation.
+* Reasoning over retrieved information.
+* Conversational response generation.
+
+### Simple Memory
+
+The workflow uses **Simple Memory** to maintain conversation history for each user session.
+
+The user's **Telegram Chat ID** is used to associate messages with the correct conversation context.
+
+This allows follow-up questions such as:
+
+> "What about its price?"
+
+to be interpreted in the context of the previously discussed product.
+
+---
+
+## 3. Database Tools & Retrieval
+
+The workflow uses a **hybrid retrieval architecture** consisting of structured SQL data and semantic vector search.
+
+### Supabase1 — Relational Database Tool
+
+The **Supabase1** tool connects the AI Agent to a structured `product` table containing product-level information.
+
+It is used for queries involving structured attributes such as:
+
+* Product name
+* Brand
+* Price
+* Availability
+* Product images
+* PDF catalog links
+* Other structured product attributes
+
+This makes SQL-based retrieval suitable for questions where **exact values and structured filtering** are required.
+
+---
+
+### Supabase Vector Store — Technical Knowledge Retrieval
+
+The **Supabase Vector Store** contains vectorized representations of text extracted from product PDF catalogs.
+
+The workflow uses **OpenAI Embeddings** to convert catalog text into embeddings for semantic search.
+
+This retrieval layer is designed for questions involving:
+
+* Technical specifications
+* Detailed product descriptions
+* Performance characteristics
+* Features
+* Engineering information
+* Long-form catalog content
+* Questions where exact keyword matching may not be sufficient
+
+```text id="x8j2pv"
+             Product PDF Catalogs
+                     │
+                     ▼
+              Text Extraction
+                     │
+                     ▼
+             OpenAI Embeddings
+                     │
+                     ▼
+          Supabase Vector Store
+                     │
+                     ▼
+          Semantic Retrieval
+                     │
+                     ▼
+                 AI Agent
+```
+
+---
+
+## 4. Hybrid Retrieval Architecture
+
+The combination of relational and vector databases allows the system to select the most appropriate source based on the type of information requested.
+
+| Query Type                   | Retrieval Source | Example                                                        |
+| ---------------------------- | ---------------- | -------------------------------------------------------------- |
+| **Price**                    | Supabase SQL     | "How much does Product X cost?"                                |
+| **Brand**                    | Supabase SQL     | "Who manufactures Product X?"                                  |
+| **Availability**             | Supabase SQL     | "Is Product X available?"                                      |
+| **Images**                   | Supabase SQL     | "Show me the product image."                                   |
+| **PDF Catalog**              | Supabase SQL     | "Give me the product catalog."                                 |
+| **Technical Specifications** | Vector Store     | "What is the operating temperature?"                           |
+| **Performance Details**      | Vector Store     | "What is the maximum performance?"                             |
+| **Detailed Description**     | Vector Store     | "Explain the technical features."                              |
+| **Mixed Query**              | SQL + Vector     | "What is the price and what are its technical specifications?" |
+
+---
+
+## 5. Response Delivery
+
+After retrieving the relevant information and processing it through the AI Agent, the workflow sends the final response back to the user through Telegram.
+
+The response is designed to be:
+
+* **Accurate**
+* **Fact-based**
+* **Grounded in retrieved data**
+* **Context-aware**
+* **Concise and understandable**
+* Written in the **same language used by the user**
+
+The system avoids presenting information that cannot be supported by the available database or catalog content.
+
+---
+
+## Workflow Architecture
+
+```text id="8v2qfz"
+                         Telegram
+                            │
+                            ▼
+                    Telegram Trigger
+                            │
+                            ▼
+                        Code Node
+                            │
+                  Keyword / Intent Routing
+                            │
+             ┌──────────────┼──────────────┐
+             │              │              │
+             ▼              ▼              ▼
+            SQL           Vector          Both
+             │              │              │
+             ▼              ▼              ▼
+       Supabase1      Supabase Vector   SQL + Vector
+       Product DB          Store           Retrieval
+             │              │              │
+             └──────────────┼──────────────┘
+                            │
+                            ▼
+                        AI Agent
+                            │
+              ┌─────────────┴─────────────┐
+              │                           │
+       GPT-4o-mini                  Simple Memory
+       Chat Model               (Telegram Chat ID)
+              │                           │
+              └─────────────┬─────────────┘
+                            │
+                            ▼
+                   Grounded AI Response
+                            │
+                            ▼
+                         Telegram
+                            │
+                            ▼
+                           User
+```
+
+## Key Capabilities
+
+| Capability                   | Description                                                         |
+| ---------------------------- | ------------------------------------------------------------------- |
+| **Telegram Interface**       | Provides a conversational product-search interface through Telegram |
+| **Intent Routing**           | Determines whether the query requires SQL, vector search, or both   |
+| **Structured Retrieval**     | Retrieves exact product attributes from Supabase                    |
+| **Semantic Search**          | Retrieves relevant information from product PDF catalogs            |
+| **AI Reasoning**             | Uses GPT-4o-mini to interpret and combine retrieved information     |
+| **Conversation Memory**      | Maintains context across user interactions                          |
+| **Hybrid Architecture**      | Combines relational and vector databases                            |
+| **Technical Catalog Search** | Answers detailed questions using embedded catalog content           |
+| **Grounded Responses**       | Restricts answers to available database and catalog information     |
+| **Multilingual Responses**   | Responds in the user's original language                            |
+
+## Overall System
+
+The workflow combines **Telegram, n8n, OpenAI, Supabase SQL, and vector search** into a unified AI-powered product knowledge assistant.
+
+Its hybrid architecture separates **structured product data** from **unstructured technical knowledge**, allowing each type of query to be handled by the retrieval method best suited to it.
+
+The result is a conversational assistant capable of answering product-related questions while maintaining a strong focus on **accuracy, traceability, and database-grounded responses** rather than relying on the AI model's general knowledge.
