@@ -185,16 +185,21 @@ I aim to avoid unnecessary complexity and select technologies based on the **act
 ```text
 AI-Automation-Portfolio/
 │
-├── real-estate-platform/
+├── Assignment Auto-Grading System/
 │   ├── architecture/
 │   └── README.md
 │
-├── intelligent-automation/
+├── Reminder/
 │   ├── workflows/
 │   ├── architecture/
 │   └── README.md
 │
-├── ai-trainer-toolkit/
+├── E-Store/
+│   ├── workflows/
+│   ├── architecture/
+│   └── README.md
+│
+├── LinkedIn Post/
 │   ├── prompts/
 │   ├── frameworks/
 │   └── README.md
