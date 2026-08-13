@@ -13,7 +13,7 @@ This **n8n workflow** functions as an **Automated Assignment Grading System**. I
 * Downloads the grading criteria:
 
   * `Rubric.txt`
-* Searches a designated **Google Drive** folder for student C++ source-code files (`.cpp`).
+* Searches a designated **Google Drive** folder for student assignment folder like: C++ source-code files (`.cpp`).
 
 ### 2. Data Preparation & Looping
 
