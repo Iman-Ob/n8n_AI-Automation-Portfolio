@@ -1,0 +1,278 @@
+# AI News Automation & LinkedIn Publishing System — n8n Workflow
+
+## Workflow Overview
+
+This **n8n workflow** automatically discovers and publishes AI-related news on a scheduled basis.
+
+It combines web scraping, AI-powered content generation, structured output parsing, social media publishing, Google Sheets logging, and AI-generated visual content into a single automated pipeline.
+
+The workflow uses an **OpenAI-powered AI Agent** to identify and summarize relevant AI news, publishes the resulting post to **LinkedIn**, and records the publication details in **Google Sheets**.
+
+Additionally, a secondary AI Agent generates a custom visual prompt, which is sent to **Hugging Face's FLUX.1** image-generation model to create a matching infographic.
+
+---
+
+## Step-by-Step Breakdown
+
+### 1. Trigger & Data Fetching
+
+#### Schedule Trigger
+
+The workflow starts automatically using a **Schedule Trigger**.
+
+* Runs on a recurring schedule.
+* Current configuration: **Every 3 days**.
+* Eliminates the need for manual execution.
+
+#### HTTP Request
+
+The workflow then uses an **HTTP Request** node to fetch raw HTML/content from:
+
+* `ainews.com`
+
+The retrieved content becomes the input for the AI-powered news extraction stage.
+
+```text id="m7c2qa"
+          Schedule Trigger
+                │
+                ▼
+          HTTP Request
+                │
+                ▼
+         ainews.com Content
+                │
+                ▼
+            AI Agent
+```
+
+---
+
+## 2. Main AI Processing & News Extraction
+
+The main **AI Agent** processes the retrieved news content and prepares the LinkedIn post.
+
+### OpenAI Chat Model — GPT-4.1-mini
+
+The AI Agent uses **GPT-4.1-mini** as its underlying language model.
+
+Its responsibilities include:
+
+1. Analyzing the fetched AI news content.
+2. Identifying the **top 3 relevant articles**.
+3. Randomly selecting one article from the selected articles.
+4. Extracting the key information from the selected article.
+5. Generating a concise and engaging LinkedIn post.
+
+### Structured Output Parser
+
+A **Structured Output Parser** ensures that the AI Agent returns the generated information in a predefined structure.
+
+The output includes:
+
+* Article title
+* Article link
+* Summary
+* Publish date
+* LinkedIn post content
+* Hashtags
+* Emojis
+
+The generated LinkedIn content is constrained to **under 150 words** to maintain a concise social-media format.
+
+```text id="2l8nwp"
+       AI News Content
+              │
+              ▼
+          AI Agent
+       (GPT-4.1-mini)
+              │
+              ├── Identify Top 3 Articles
+              │
+              ├── Select One Article
+              │
+              └── Generate LinkedIn Post
+                       │
+                       ▼
+            Structured Output Parser
+                       │
+                       ▼
+              Structured JSON Output
+```
+
+---
+
+## 3. Publishing & Logging Outputs
+
+Once the content has been generated and structured, the workflow sends the results to multiple destinations.
+
+### Google Sheets
+
+The workflow automatically appends the generated content to a designated Google Sheets document:
+
+* **Sheet:** `linkedin posts`
+
+The sheet acts as a tracking and logging layer for generated publications.
+
+It can store information such as:
+
+* Article title
+* Article URL
+* Generated summary
+* LinkedIn post
+* Publish date
+* Other structured output fields
+
+### LinkedIn
+
+The selected article is published directly to an **organization's LinkedIn page**.
+
+The published content includes:
+
+* Article title
+* AI-generated summary
+* Hashtags
+* Emojis
+
+This allows the workflow to operate as an automated **AI news publishing pipeline** without requiring manual content creation for each post.
+
+---
+
+## 4. Infographic Generation Sub-Pipeline
+
+In parallel with the publishing and logging process, the workflow generates a custom visual for the selected news article.
+
+### AI Agent1 — Visual Prompt Generation
+
+**AI Agent1** receives the generated news/post content and converts it into a specialized prompt for image generation.
+
+The prompt is designed specifically to produce an **infographic-style visual** that matches the topic of the selected AI news article.
+
+The generated prompt can describe elements such as:
+
+* Main subject
+* Key concepts
+* Visual hierarchy
+* Infographic composition
+* Relevant technology concepts
+* Professional visual style
+* Supporting graphical elements
+
+```text id="9d4xkt"
+       Generated News Content
+                │
+                ▼
+            AI Agent1
+                │
+                ▼
+       Infographic Prompt
+                │
+                ▼
+         HTTP Request1
+                │
+                ▼
+       Hugging Face API
+                │
+                ▼
+      FLUX.1-schnell Model
+                │
+                ▼
+          PNG Image
+```
+
+### HTTP Request1 — Hugging Face Image Generation
+
+The generated image prompt is sent through an **HTTP POST request** to the Hugging Face inference API.
+
+The workflow uses the following model:
+
+```text id="e5q2rx"
+black-forest-labs/FLUX.1-schnell
+```
+
+The model generates a custom **PNG image** based on the AI-generated infographic prompt.
+
+---
+
+## Workflow Architecture
+
+```text id="w4k7ps"
+                       Schedule Trigger
+                              │
+                              ▼
+                        HTTP Request
+                              │
+                              ▼
+                         ainews.com
+                              │
+                              ▼
+                           AI Agent
+                       GPT-4.1-mini
+                              │
+                ┌─────────────┴─────────────┐
+                │                           │
+                ▼                           ▼
+        Top 3 Articles              Content Generation
+                │                           │
+                └─────────────┬─────────────┘
+                              │
+                              ▼
+                   Structured Output Parser
+                              │
+                              ▼
+                    Structured News Output
+                              │
+              ┌───────────────┼────────────────┐
+              │               │                │
+              ▼               ▼                ▼
+       Google Sheets       LinkedIn        AI Agent1
+       "linkedin posts"   Organization      Visual Prompt
+                                              │
+                                              ▼
+                                        HTTP Request1
+                                              │
+                                              ▼
+                                      Hugging Face API
+                                              │
+                                              ▼
+                                      FLUX.1-schnell
+                                              │
+                                              ▼
+                                         PNG Image
+```
+
+---
+
+## Key Capabilities
+
+| Capability                    | Description                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------- |
+| **Automated Scheduling**      | Runs automatically every 3 days                                                       |
+| **AI News Scraping**          | Retrieves current AI news content from `ainews.com`                                   |
+| **Article Selection**         | Identifies the top 3 articles and randomly selects one                                |
+| **AI Content Generation**     | Creates concise LinkedIn-ready content                                                |
+| **Structured Output**         | Uses a structured parser for consistent data formatting                               |
+| **LinkedIn Publishing**       | Automatically publishes content to an organization page                               |
+| **Content Logging**           | Stores generated posts in Google Sheets                                               |
+| **Visual Prompt Engineering** | Generates a custom image prompt for each article                                      |
+| **AI Image Generation**       | Uses Hugging Face's FLUX.1-schnell model                                              |
+| **Infographic Creation**      | Produces a matching PNG visual for the selected news topic                            |
+| **End-to-End Automation**     | Connects news discovery, content creation, publishing, logging, and visual generation |
+
+---
+
+## Overall System
+
+The workflow creates an **end-to-end AI News Content Automation Pipeline**.
+
+It automatically:
+
+1. **Discovers** AI news.
+2. **Selects** a relevant article.
+3. **Summarizes** the content using GPT-4.1-mini.
+4. **Structures** the output using a parser.
+5. **Publishes** the post to LinkedIn.
+6. **Logs** the publication data in Google Sheets.
+7. **Generates** a custom infographic prompt.
+8. **Creates** an AI-generated PNG visual using FLUX.1-schnell.
+
+This architecture transforms a recurring news-monitoring task into an automated **AI-powered content production and publishing system**.
